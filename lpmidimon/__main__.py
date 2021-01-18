@@ -2,7 +2,8 @@
 #
 # Copyright 2021 - Looperlative Audio Products, LLC
 #
-# pip install: mido, rtmidi, python-rtmidi
+# On Windows: install Visual C++ from Microsoft
+# On All Systems: pip install mido python-rtmidi PyQt5
 
 import mido
 import sys
