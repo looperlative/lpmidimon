@@ -28,6 +28,6 @@ There is a makefile provided that works on Linux.  The makefile produces a singl
 archive of the lpmidimon directory that can be executed on the command line by typing
 "lpmidimon".  I have not tried this technique on Windows nor Mac.  If you clean this
 up for Windows and Mac, please contact Looperlative through a message on
-www.looperlative.com.  I will likely gladly accept your changes.
+www.looperlative.com.  I will likely gladly accept your changes.  Thank you.
 
 See LICENSE file for full text of the license.
