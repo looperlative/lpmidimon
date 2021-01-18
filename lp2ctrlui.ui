@@ -8,7 +8,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>764</height>
+    <height>798</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -79,7 +79,7 @@
       <x>10</x>
       <y>300</y>
       <width>771</width>
-      <height>401</height>
+      <height>411</height>
      </rect>
     </property>
     <property name="font">
@@ -87,6 +87,19 @@
       <family>Ubuntu Mono</family>
       <pointsize>10</pointsize>
      </font>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>720</y>
+      <width>631</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Copyright 2021 Looperlative Audio Products, LLC</string>
     </property>
    </widget>
   </widget>
