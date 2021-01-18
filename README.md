@@ -8,6 +8,10 @@ Requirements:
 Python3 is required to run this application.
 
 Windows:
+	Python is not installed on Windows by default.  If you open a "cmd" window and type
+	"python" on the command line, Windows will lead you through the steps of installing
+	Python on Windows.
+
 	Because MIDI is not built in to Python, this application uses mido and python-rtmidi.
 	"python-rtmidi" requires Microsoft Visual C++ to install it.  You must go to the
 	Microsoft web site and install Visual C++.
