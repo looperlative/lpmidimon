@@ -6,6 +6,7 @@
 # On All Systems: pip install mido python-rtmidi PyQt5
 
 import mido
+import mido.backends.rtmidi
 import sys
 import time
 import threading
