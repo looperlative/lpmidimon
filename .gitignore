@@ -2,3 +2,6 @@
 bin/
 lpmidimon/__pycache__/
 lpmidimon.pyc
+lpmidimon/build/
+lpmidimon/dist/
+*.spec
