@@ -5,3 +5,4 @@ lpmidimon.pyc
 lpmidimon/build/
 lpmidimon/dist/
 *.spec
+.DS_Store
