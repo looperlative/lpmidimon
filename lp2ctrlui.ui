@@ -150,6 +150,7 @@
     </property>
     <addaction name="action_Status"/>
     <addaction name="action_MIDI_Status"/>
+    <addaction name="actionSD_Directory"/>
     <addaction name="actionRe_boot"/>
    </widget>
    <addaction name="menu_File"/>
@@ -217,6 +218,11 @@
    </property>
    <property name="text">
     <string>outdeviceexample</string>
+   </property>
+  </action>
+  <action name="actionSD_Directory">
+   <property name="text">
+    <string>SD Directory</string>
    </property>
   </action>
  </widget>

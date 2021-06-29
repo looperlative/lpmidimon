@@ -69,6 +69,9 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.lp2_cmd = 0
         self.statusTh = None
 
+        self.midiclockcount = -1
+        self.midiclockstarttime = -1.0
+
         self.restartStatusThread()
 
         for i in range(1,9):
@@ -98,12 +101,21 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             self.fsliders[i-1].setObjectName("feedback_" + str(i))
             self.gridLayout.addWidget(self.fsliders[i-1], 6, i, Qt.AlignCenter)
 
+        bpm = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.gridLayout.addWidget(bpm, 7, 0, 1, 1)
+        bpm.setText("BPM")
+
+        self.midiclock = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.gridLayout.addWidget(self.midiclock, 7, 1, 1, 1)
+        self.midiclock.setText("???")
+
         self.plainTextEdit.setReadOnly(True)
 
         self.action_Upgrade.triggered.connect(self.handleUpgrade)
         self.action_Status.triggered.connect(self.handleStatus)
         self.action_MIDI_Status.triggered.connect(self.handleMIDIStatus)
         self.actionRe_boot.triggered.connect(self.handleReboot)
+        self.actionSD_Directory.triggered.connect(self.handleDirectory)
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.handleTimer)
@@ -111,12 +123,19 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
 
     def restartStatusThread(self):
         if self.statusTh != None:
-            self.endStatusTask = True;
+            self.endStatusTask = True
             self.statusTh.join()
-            self.endStatusTask = False;
+            self.endStatusTask = False
 
         self.statusTh = threading.Thread(target=self.statusThread)
         self.statusTh.start()
+
+    def stopStatusThread(self):
+        if self.statusTh != None:
+            self.endStatusTask = True
+            self.statusTh.join()
+            self.endStatusTask = False
+            self.statusTh = None
 
     def processINDevice(self, chk):
         self.midiInDevice = self.sender().data()
@@ -177,6 +196,18 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             self.currentStatus.setStatus(s)
         elif msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 3] and b[5] != 0xf7:
             self.currentStatus.appendLog(''.join(map(chr, b[5:-1])))
+        elif msg.type == 'clock':
+            self.midiclockcount += 1
+
+            if self.midiclockcount == 0:
+                self.midiclockcount = 0
+                self.midiclockstarttime = time.time()
+            elif self.midiclockcount == 24:
+                now = time.time()
+                diff = now - self.midiclockstarttime
+                self.midiclockstarttime = now
+                self.midiclockcount = 0
+                self.midiclock.setText("{bpm:.2f}".format(bpm = (60.0 / diff)))
 
     def statusThread(self):
         try:
@@ -210,9 +241,12 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def handleReboot(self):
         self.lp2_cmd = ord('b')
 
+    def handleDirectory(self):
+        self.lp2_cmd = ord('d')
+
     def handleUpgrade(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open upgrade file", "",
-                                               "MIDI Sysex files (*.syx)")
+                                                  "MIDI Sysex files (*.syx)")
         print(fileName)
         if len(fileName) > 0:
             th = threading.Thread(target=lp2_upgrade,
@@ -243,6 +277,13 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             logW.moveCursor(QTextCursor.End)
             logW.insertPlainText(ltext)
             logW.moveCursor(QTextCursor.End)
+
+        if self.midiclockcount >= 0:
+            now = time.time()
+            diff = now - self.midiclockstarttime
+            if diff > 4.0:
+                self.midiclockcount = -1;
+                self.midiclock.setText("no clock")
 
     def closeEvent(self, event):
         self.endStatusTask = True
