@@ -207,7 +207,10 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                 diff = now - self.midiclockstarttime
                 self.midiclockstarttime = now
                 self.midiclockcount = 0
-                self.midiclock.setText("{bpm:.2f}".format(bpm = (60.0 / diff)))
+                try:
+                    self.midiclock.setText("{bpm:.2f}".format(bpm = (60.0 / diff)))
+                except:
+                    pass
 
     def statusThread(self):
         try:
