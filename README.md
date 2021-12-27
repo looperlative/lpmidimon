@@ -17,7 +17,7 @@ Windows:
 	Microsoft web site and install Visual C++.
 
 All systems:
-	The python packages "mido", "python-rtmidi" and "PyQt5" are required to run this
+	The python packages "psutil", "mido", "python-rtmidi" and "PyQt5" are required to run this
 	application.  If you do not already have these installed on your system, then
 	use "pip install" to install them.
 
