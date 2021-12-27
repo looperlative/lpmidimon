@@ -79,6 +79,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.currentStatus = LPStatus()
         self.endStatusTask = False
         self.lp2_cmd = 0
+        self.parsingEffectConfig = False
         self.requestEffectButtons = True
         self.sendEffectConfig = False
         self.statusTh = None
@@ -437,6 +438,9 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                         b.append(i & 0x7f)
                     saveEffectsReq = mido.Message('sysex', data=b)
                     outport.send(saveEffectsReq)
+                    time.sleep(0.3)
+                    # print(saveEffectsReq)
+
                 outport.send(logRequest)
                 time.sleep(0.2)
                 outport.send(statusRequest)
@@ -565,6 +569,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             pass
 
     def parseEffectConfig(self, b):
+        self.parsingEffectConfig = True
         neffects = b[0]
         self.effects1 = []
         self.effects2 = []
@@ -592,13 +597,15 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                 if id == self.effects2[i]:
                     self.effect2boxes[i].setCurrentIndex(index)
                 index += 1
+        self.parsingEffectConfig = False
 
     def effectChanged(self, idx):
-        ids = self.lpFunctions.keys()
-        for i in range(0, 8):
-            self.effects1[i] = ids[self.effect1boxes[i].currentIndex()]
-            self.effects2[i] = ids[self.effect2boxes[i].currentIndex()]
-        self.sendEffectConfig = True
+        if not self.parsingEffectConfig:
+            ids = self.lpFunctions.keys()
+            for i in range(0, 8):
+                self.effects1[i] = ids[self.effect1boxes[i].currentIndex()]
+                self.effects2[i] = ids[self.effect2boxes[i].currentIndex()]
+            self.sendEffectConfig = True
 
 def main():
     app = QApplication(sys.argv)
