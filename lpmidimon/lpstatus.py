@@ -71,6 +71,33 @@ class LPStatus:
         self.__parseMIDIStatusTrack(b[35:49])
         self.__parseMIDIStatusTrack(b[49:63])
 
+    def parseIPStatus(self, b):
+        srate = int.from_bytes(b[0:4], "big")
+        self.tracks = int.from_bytes(b[4:8], "big")
+
+        bi = 8
+        for i in range(self.tracks):
+            self.statuses.append(int.from_bytes(b[bi:bi+4], "big"))
+            bi += 4
+        for i in range(self.tracks):
+            self.lengths.append(float(int.from_bytes(b[bi:bi+4], "big")) / float(srate))
+            bi += 4
+        for i in range(self.tracks):
+            self.positions.append(float(int.from_bytes(b[bi:bi+4], "big")) / float(srate))
+            bi += 4
+        for i in range(self.tracks):
+            self.levels.append(int.from_bytes(b[bi:bi+4], "big"))
+            bi += 4
+        for i in range(self.tracks):
+            self.pans.append(int.from_bytes(b[bi:bi+4], "big"))
+            bi += 4
+        for i in range(self.tracks):
+            self.feedbacks.append(int.from_bytes(b[bi:bi+4], "big"))
+            bi += 4
+        for i in range(self.tracks):
+            if (int.from_bytes(b[bi:bi+4], "big") == 1):
+                self.selected_track = i + 1
+
     def getStatusString(status):
         if status == 0:
             return 'empty'

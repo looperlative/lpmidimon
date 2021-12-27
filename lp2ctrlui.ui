@@ -8,7 +8,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>798</height>
+    <height>965</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -86,10 +86,10 @@
    <widget class="QPlainTextEdit" name="plainTextEdit">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>300</y>
+      <x>0</x>
+      <y>580</y>
       <width>771</width>
-      <height>411</height>
+      <height>301</height>
      </rect>
     </property>
     <property name="font">
@@ -102,8 +102,8 @@
    <widget class="QLabel" name="label_5">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>720</y>
+      <x>10</x>
+      <y>880</y>
       <width>631</width>
       <height>17</height>
      </rect>
@@ -111,6 +111,144 @@
     <property name="text">
      <string>Copyright 2021 Looperlative Audio Products, LLC</string>
     </property>
+   </widget>
+   <widget class="QWidget" name="gridLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>9</x>
+      <y>289</y>
+      <width>761</width>
+      <height>281</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="7" column="0">
+      <widget class="QLabel" name="label_19">
+       <property name="text">
+        <string>Replace 1/7</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Replace</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_20">
+       <property name="text">
+        <string>Replace 1/12</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Effect 2</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_18">
+       <property name="text">
+        <string>Retrigger Random</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>1/2 Speed</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Replace 1/10</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="3">
+      <widget class="QLabel" name="label_28">
+       <property name="text">
+        <string>Replace 1/64</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="3">
+      <widget class="QLabel" name="label_27">
+       <property name="text">
+        <string>Replace 1/9</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_13">
+       <property name="text">
+        <string>Retrigger Once</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="3">
+      <widget class="QLabel" name="label_26">
+       <property name="text">
+        <string>Replace 1/24</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="3">
+      <widget class="QLabel" name="label_25">
+       <property name="text">
+        <string>Replace 1/16</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
+      <widget class="QLabel" name="label_23">
+       <property name="text">
+        <string>1/4 Speed</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>Replace 1/8</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="3">
+      <widget class="QLabel" name="label_24">
+       <property name="text">
+        <string>Reverse</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QLabel" name="label_22">
+       <property name="text">
+        <string>Retrigger Continuous</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QLabel" name="label_21">
+       <property name="text">
+        <string>Continue</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Effect 1</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -143,6 +281,8 @@
     <addaction name="action_Upgrade"/>
     <addaction name="menuMIDI_IN_device"/>
     <addaction name="menuMIDI_OUT_device"/>
+    <addaction name="separator"/>
+    <addaction name="actionEdit_Effect_Buttons"/>
    </widget>
    <widget class="QMenu" name="menu_Debug">
     <property name="title">
@@ -223,6 +363,11 @@
   <action name="actionSD_Directory">
    <property name="text">
     <string>SD Directory</string>
+   </property>
+  </action>
+  <action name="actionEdit_Effect_Buttons">
+   <property name="text">
+    <string>Reread Effect Buttons</string>
    </property>
   </action>
  </widget>
