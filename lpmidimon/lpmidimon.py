@@ -27,29 +27,6 @@ from level_bar import LevelBar
 from pan_bar import PanBar
 from lpfunctions import LPFunctions
 
-def lp2_upgrade(portname, currentStatus, fileName):
-    with mido.open_output(portname) as outport:
-        try:
-            messages = mido.read_syx_file(fileName)
-        except:
-            currentStatus.appendLog("Error reading MIDI Sysex file\n")
-            return
-
-        total_lines = float(len(messages))
-        target_percent = 5.0
-
-        count = 0.0
-        for i in messages:
-            outport.send(i)
-            time.sleep(0.07)
-            count += 1.0
-            percent = (count / total_lines) * 100.0
-            if percent >= target_percent:
-                currentStatus.appendLog(str(int(percent)) + '% complete\n')
-                target_percent += 5.0
-
-    currentStatus.appendLog("Completed\n")
-
 class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def __init__(self, parent=None):
         super(LP2CtrlApp, self).__init__(parent)
@@ -60,6 +37,8 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.searchReturn = []
         self.upgradeFileLock = threading.Lock()
         self.upgradeFile = ""
+
+        self.upgradeFlag = False
 
         self.midiInDevice = ""
         self.midiOutDevice = ""
@@ -419,6 +398,21 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             logRequest = mido.Message('sysex', data=[0,2,0x33,3])
 
             while not self.endStatusTask:
+                if self.upgradeFlag:
+                    total_lines = float(len(self.upgradeMessages))
+                    target_percent = 5.0
+                    count = 0.0
+                    for i in self.upgradeMessages:
+                        outport.send(i)
+                        time.sleep(0.07)
+                        count += 1.0
+                        percent = (count / total_lines) * 100.0
+                        if percent >= target_percent:
+                            self.currentStatus.appendLog(str(int(percent)) + '% complete\n')
+                            target_percent += 5.0
+                    self.upgradeMessages = None
+                    self.upgradeFlag = False
+                    self.currentStatus.appendLog("Completed\n");
                 if self.lp2_cmd != 0:
                     cmdRequest = mido.Message('sysex', data=[0,2,0x33,4,self.lp2_cmd])
                     outport.send(cmdRequest)
@@ -477,9 +471,12 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             fileName, _ = QFileDialog.getOpenFileName(self, "Open upgrade file", "",
                                                       "MIDI Sysex files (*.syx)")
             if len(fileName) > 0:
-                th = threading.Thread(target=lp2_upgrade,
-                                      args=[self.midiOutDevice, self.currentStatus, fileName])
-                th.start()
+                try:
+                    self.upgradeMessages = mido.read_syx_file(fileName)
+                    self.upgradeFlag = True
+                except:
+                    self.upgradeMessages = None
+                    currentStatus.appendLog("Error reading MIDI Sysex file\n")
 
     def handleEffectButtons(self):
         self.requestEffectButtons = True
