@@ -31,7 +31,7 @@ class PanBar(QtWidgets.QWidget):
             brush = QtGui.QBrush()
             brush.setColor(QtGui.QColor('black'))
             brush.setStyle(Qt.SolidPattern)
-            rect = QtCore.QRect(0, 0, w, h)
+            rect = QtCore.QRect(0, 0, int(w), int(h))
             painter.fillRect(rect, brush)
 
             stepsize = 100.0 / self.steps
@@ -51,7 +51,7 @@ class PanBar(QtWidgets.QWidget):
             x += steppan * (hh / 20.0)
 
             brush.setColor(QtGui.QColor('red'))
-            r = QtCore.QRect(x - 2, y, 4, hh)
+            r = QtCore.QRect(int(x - 2), int(y), 4, int(hh))
             painter.fillRect(r, brush)
 
             painter.end()

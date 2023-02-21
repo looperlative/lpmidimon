@@ -111,6 +111,9 @@ class LPFunctions():
             2101: "LP2 Select Other",
             2102: "LP2 1/4 Speed",
             2103: "LP2 1/2 Speed",
+            57: "Bounce",
+            58: "Sync Bounce",
+            59: "MIDI Sync Bounce",
         }
 
         self.displayOrder = [
