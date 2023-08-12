@@ -31,7 +31,7 @@ class LevelBar(QtWidgets.QWidget):
             brush = QtGui.QBrush()
             brush.setColor(QtGui.QColor('black'))
             brush.setStyle(Qt.SolidPattern)
-            rect = QtCore.QRect(0, 0, w, h)
+            rect = QtCore.QRect(0, 0, int(w), int(h))
             painter.fillRect(rect, brush)
 
             stepsize = 100.0 / self.steps
@@ -52,7 +52,7 @@ class LevelBar(QtWidgets.QWidget):
             brush.setColor(QtGui.QColor('red'))
             for i in range(steplevel):
                 xd = (self.steps - i)/2
-                r = QtCore.QRect(x, h - y, ww - xd * 2, hbar)
+                r = QtCore.QRect(int(x), int(h - y), int(ww - xd * 2), int(hbar))
                 y += hstep
                 painter.fillRect(r, brush)
 

@@ -500,6 +500,16 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         for i,j in zip(self.fsliders, s.feedbacks):
             i.setLevel(j)
 
+#        print("Num tracks {}".format(s.tracks))
+#        for i in range(s.tracks,8):
+#            self.tracktitles[i].hide()
+#            self.lengths[i].hide()
+#            self.positions[i].hide()
+#            self.statuses[i].hide()
+#            self.psliders[i].hide()
+#            self.vsliders[i].hide()
+#            self.fsliders[i].hide()
+
         ltext = self.currentStatus.getLog()
         if len(ltext) > 0:
             logW = self.plainTextEdit
