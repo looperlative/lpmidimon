@@ -114,6 +114,8 @@ class LPFunctions():
             57: "Bounce",
             58: "Sync Bounce",
             59: "MIDI Sync Bounce",
+            96: "Except Track",
+            2: "All Tracks",
         }
 
         self.displayOrder = [
