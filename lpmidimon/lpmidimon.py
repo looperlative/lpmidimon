@@ -443,7 +443,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                     btnReq = mido.Message('sysex', data=[0,2,0x33,14,msb,lsb,8])
                     outport.send(btnReq)
                     self.requestMIDIButton += 8
-                    time.sleep(0.3)
+                    time.sleep(0.05)
                 elif self.sendEffectConfig:
                     self.sendEffectConfig = False
                     b = [0, 2, 0x33, 10, 8]
@@ -456,7 +456,6 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                     saveEffectsReq = mido.Message('sysex', data=b)
                     outport.send(saveEffectsReq)
                     time.sleep(0.3)
-                    # print(saveEffectsReq)
                 else:
                     outport.send(logRequest)
                     time.sleep(0.2)
