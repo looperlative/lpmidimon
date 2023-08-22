@@ -54,6 +54,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.tracktitles = []
         self.effect1boxes = []
         self.effect2boxes = []
+        self.stepboxes = []
 
         self.currentStatus = LPStatus()
         self.endStatusTask = False
@@ -62,11 +63,20 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.requestEffectButtons = True
         self.sendEffectConfig = False
         self.statusTh = None
+        self.requestMIDIButton = 0
 
         self.midiclockcount = -1
         self.midiclockstarttime = -1.0
 
         self.restartStatusThread()
+
+        self.midibtntype.addItem("Note")
+        self.midibtntype.addItem("CC")
+        self.midibtntype.addItem("PgmChange")
+        for i in range(0,128):
+            self.midibtnnum.addItem(str(i))
+        self.midibtntype.currentIndexChanged.connect(self.midibtntypeChanged)
+        self.midibtnnum.currentIndexChanged.connect(self.midibtnnumChanged)
 
         for i in range(1,9):
             self.tracktitles.append(QtWidgets.QLabel(self.gridLayoutWidget))
@@ -102,6 +112,10 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             self.effect2boxes.append(QtWidgets.QComboBox(self.gridLayoutWidget_2))
             self.gridLayout_2.addWidget(self.effect2boxes[i-1], i, 2, 1, 1)
             self.effect2boxes[i-1].currentIndexChanged.connect(self.effectChanged)
+
+            self.stepboxes.append(QtWidgets.QComboBox(self.gridLayoutWidget_2))
+            self.gridLayout_3.addWidget(self.stepboxes[i-1], 1, i+1, 1, 1)
+            self.stepboxes[i-1].currentIndexChanged.connect(self.stepChanged)
 
         bpm = QtWidgets.QLabel(self.gridLayoutWidget)
         self.gridLayout.addWidget(bpm, 7, 0, 1, 1)
@@ -243,6 +257,8 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             self.currentStatus.appendLog(''.join(map(chr, b[5:-1])))
         elif msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 9]:
             self.parseEffectConfig(b[5:])
+        elif msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 15]:
+            self.parseButtonConfig(b[5:])
         elif msg.type == 'clock':
             self.midiclockcount += 1
 
@@ -413,15 +429,22 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                     self.upgradeMessages = None
                     self.upgradeFlag = False
                     self.currentStatus.appendLog("Completed\n");
-                if self.lp2_cmd != 0:
+                elif self.lp2_cmd != 0:
                     cmdRequest = mido.Message('sysex', data=[0,2,0x33,4,self.lp2_cmd])
                     outport.send(cmdRequest)
                     self.lp2_cmd = 0
-                if self.requestEffectButtons:
+                elif self.requestEffectButtons:
                     self.requestEffectButtons = False
                     btnReq = mido.Message('sysex', data=[0,2,0x33,9])
                     outport.send(btnReq)
-                if self.sendEffectConfig:
+                elif self.requestMIDIButton < 384:
+                    msb = (self.requestMIDIButton >> 7) & 0x7f
+                    lsb = self.requestMIDIButton & 0x7f
+                    btnReq = mido.Message('sysex', data=[0,2,0x33,14,msb,lsb,8])
+                    outport.send(btnReq)
+                    self.requestMIDIButton += 8
+                    time.sleep(0.3)
+                elif self.sendEffectConfig:
                     self.sendEffectConfig = False
                     b = [0, 2, 0x33, 10, 8]
                     for i in self.effects1:
@@ -434,11 +457,11 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                     outport.send(saveEffectsReq)
                     time.sleep(0.3)
                     # print(saveEffectsReq)
-
-                outport.send(logRequest)
-                time.sleep(0.2)
-                outport.send(statusRequest)
-                time.sleep(0.2)
+                else:
+                    outport.send(logRequest)
+                    time.sleep(0.2)
+                    outport.send(statusRequest)
+                    time.sleep(0.2)
         except Exception as err:
             print(type(err))
             print(err.args)
@@ -480,6 +503,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
 
     def handleEffectButtons(self):
         self.requestEffectButtons = True
+        self.requestMIDIButton = 0
         pass
 
     def handleTimer(self):
@@ -575,6 +599,16 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         except FileNotFoundError:
             pass
 
+    def parseButtonConfig(self, b):
+        print("parseButtonConfig: {}".format(b))
+        btnnum = 0
+        btnnum = btnnum + (b[0] << 7) + b[1]
+        btncnt = 0
+        btncnt = b[2]
+        func = 0
+        func = func + (b[3] << 7) + b[4]
+        print("btn {} {}: {}".format(btnnum, btncnt, func))
+
     def parseEffectConfig(self, b):
         self.parsingEffectConfig = True
         neffects = b[0]
@@ -613,6 +647,15 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                 self.effects1[i] = ids[self.effect1boxes[i].currentIndex()]
                 self.effects2[i] = ids[self.effect2boxes[i].currentIndex()]
             self.sendEffectConfig = True
+
+    def stepChanged(self, idx):
+        pass
+
+    def midibtntypeChanged(self, idx):
+        pass
+
+    def midibtnnumChanged(self, idx):
+        pass
 
 def main():
     app = QApplication(sys.argv)

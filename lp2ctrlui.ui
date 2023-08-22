@@ -87,9 +87,9 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>580</y>
+      <y>650</y>
       <width>771</width>
-      <height>301</height>
+      <height>231</height>
      </rect>
     </property>
     <property name="font">
@@ -250,6 +250,94 @@
      </item>
     </layout>
    </widget>
+   <widget class="QWidget" name="gridLayoutWidget_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>570</y>
+      <width>761</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_3" rowminimumheight="0,0">
+     <item row="0" column="8">
+      <widget class="QLabel" name="label_35">
+       <property name="text">
+        <string>Step 7</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="9">
+      <widget class="QLabel" name="label_36">
+       <property name="text">
+        <string>Step 8</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="label_29">
+       <property name="text">
+        <string>Step 1</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QLabel" name="label_30">
+       <property name="text">
+        <string>Step 2</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Type</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>Number</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="4">
+      <widget class="QLabel" name="label_31">
+       <property name="text">
+        <string>Step 3</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="7">
+      <widget class="QLabel" name="label_34">
+       <property name="text">
+        <string>Step 6</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="5">
+      <widget class="QLabel" name="label_32">
+       <property name="text">
+        <string>Step 4</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="6">
+      <widget class="QLabel" name="label_33">
+       <property name="text">
+        <string>Step 5</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QComboBox" name="midibtntype"/>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="midibtnnum"/>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -367,7 +455,7 @@
   </action>
   <action name="actionEdit_Effect_Buttons">
    <property name="text">
-    <string>Reread Effect Buttons</string>
+    <string>Reread Configuration</string>
    </property>
   </action>
  </widget>

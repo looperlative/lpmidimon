@@ -71,6 +71,12 @@ class LPStatus:
         self.__parseMIDIStatusTrack(b[35:49])
         self.__parseMIDIStatusTrack(b[49:63])
 
+        if (self.tracks == 8):
+            self.__parseMIDIStatusTrack(b[63:77])
+            self.__parseMIDIStatusTrack(b[77:91])
+            self.__parseMIDIStatusTrack(b[91:105])
+            self.__parseMIDIStatusTrack(b[105:119])
+
     def parseIPStatus(self, b):
         srate = int.from_bytes(b[0:4], "big")
         self.tracks = int.from_bytes(b[4:8], "big")

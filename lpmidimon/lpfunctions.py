@@ -23,11 +23,27 @@ class LPFunctions():
             16: "Stop",
             18: "All Stop Now",
             20: "All Stop",
+            2: "All Tracks",
             3: "Select Track 1",
             4: "Select Track 2",
             5: "Select Track 3",
             6: "Select Track 4",
+            7: "Select Track 5",
+            8: "Select Track 6",
+            9: "Select Track 7",
+            10: "Select Track 8",
+            36: "Select Group (1)",
+            37: "Select Group (2)",
+            38: "Select Group (3)",
+            39: "Select Group (4)",
+            40: "Select Group (5)",
+            41: "Select Group (6)",
+            42: "Select Group (7)",
+            43: "Select Group (8)",
+            44: "Select Group (9)",
+            45: "Select Group(10)",
             11: "Track Erase",
+            12: "Track Level",
             21: "Set As Clock Src",
             22: "Next Track",
             23: "Prev Track",
@@ -41,19 +57,39 @@ class LPFunctions():
             32: "Feedback -10%",
             33: "Feedback +5%",
             34: "Feedback -5%",
+            46: "Cue Track",
             48: "Replace",
             49: "Replace+Original",
             78: "Q Replace",
             79: "Q Replace+Orig",
+            50: "Assign To AUX 1",
+            55: "Assign To AUX 2",
+            62: "Assign To MAIN",
             82: "MIDI Stop",
             51: "MIDI Start",
             52: "Fast Scramble",
             53: "Medium Scramble",
             54: "Slow Scramble",
+            57: "Bounce",
+            58: "Sync Bounce",
+            59: "MIDI Sync Bounce",
+            61: "MIDI Bypass",
+            63: "Use Preset (0)",
+            64: "Use Preset (1)",
+            65: "Use Preset (2)",
+            66: "Use Preset (3)",
+            67: "Use Preset (4)",
+            68: "Use Preset (5)",
+            69: "Use Preset (6)",
+            70: "Use Preset (7)",
+            71: "Use Preset (8)",
+            72: "Use Preset (9)",
+            73: "Use Preset (10)",
             74: "Pan Center",
             77: "Fade/Swell",
             76: "Fade",
             75: "Swell",
+            80: "Copy",
             81: "Undo",
             126: "Redo",
             83: "Octave lower",
@@ -69,6 +105,7 @@ class LPFunctions():
             93: "Minor 7th",
             94: "Major 7th",
             95: "Original note",
+            96: "Except Track",
             97: "Track Level 0",
             98: "Track Level -5",
             99: "Track Level +5",
@@ -111,14 +148,9 @@ class LPFunctions():
             2101: "LP2 Select Other",
             2102: "LP2 1/4 Speed",
             2103: "LP2 1/2 Speed",
-            57: "Bounce",
-            58: "Sync Bounce",
-            59: "MIDI Sync Bounce",
-            96: "Except Track",
-            2: "All Tracks",
         }
 
-        self.displayOrder = [
+        self.displayOrderLP2 = [
             129, 130, 131, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2016, 2024, 2064, 2100,
             2101, 2102, 2103, 100, 101, 104, 47, 27, 124, 0, 60, 1, 56, 35, 13, 15,
             17, 19, 14, 16, 18, 20, 3, 4, 5, 6, 11, 21, 22, 23, 24, 25, 26, 28, 29,
@@ -128,11 +160,16 @@ class LPFunctions():
             117, 118, 119, 120, 121, 122, 123, 57, 58, 59, 96, 2
         ]
 
+        self.displayOrderLP1 = sorted(list(self.nameDict.keys()))
+
     def get(self, id):
         return self.nameDict.get(id)
 
     def keys(self):
-        return self.displayOrder
+        return self.displayOrderLP2
+
+    def keysLP1(self):
+        return self.displayOrderLP1
 
     def values(self):
         return self.nameDict.values()
