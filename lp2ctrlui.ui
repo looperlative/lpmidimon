@@ -118,7 +118,7 @@
       <x>9</x>
       <y>289</y>
       <width>761</width>
-      <height>281</height>
+      <height>221</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout_2">
@@ -254,87 +254,52 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>570</y>
+      <y>530</y>
       <width>761</width>
-      <height>80</height>
+      <height>101</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout_3" rowminimumheight="0,0">
-     <item row="0" column="8">
-      <widget class="QLabel" name="label_35">
+    <layout class="QGridLayout" name="gridLayout_3">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_10">
        <property name="text">
-        <string>Step 7</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="9">
-      <widget class="QLabel" name="label_36">
-       <property name="text">
-        <string>Step 8</string>
+        <string>Steps 1-4:</string>
        </property>
       </widget>
      </item>
      <item row="0" column="2">
-      <widget class="QLabel" name="label_29">
-       <property name="text">
-        <string>Step 1</string>
-       </property>
-      </widget>
+      <widget class="QComboBox" name="midibtnnum"/>
      </item>
      <item row="0" column="3">
-      <widget class="QLabel" name="label_30">
+      <widget class="QLabel" name="label_31">
        <property name="text">
-        <string>Step 2</string>
+        <string/>
        </property>
       </widget>
      </item>
      <item row="0" column="0">
-      <widget class="QLabel" name="label_10">
+      <widget class="QLabel" name="label_30">
        <property name="text">
-        <string>Type</string>
+        <string>MIDI Button:</string>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLabel" name="label_14">
-       <property name="text">
-        <string>Number</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="4">
-      <widget class="QLabel" name="label_31">
-       <property name="text">
-        <string>Step 3</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="7">
-      <widget class="QLabel" name="label_34">
-       <property name="text">
-        <string>Step 6</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="5">
-      <widget class="QLabel" name="label_32">
-       <property name="text">
-        <string>Step 4</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="6">
-      <widget class="QLabel" name="label_33">
-       <property name="text">
-        <string>Step 5</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
       <widget class="QComboBox" name="midibtntype"/>
      </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="midibtnnum"/>
+     <item row="0" column="4">
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_29">
+       <property name="text">
+        <string>Steps 5-8:</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -371,6 +336,8 @@
     <addaction name="menuMIDI_OUT_device"/>
     <addaction name="separator"/>
     <addaction name="actionEdit_Effect_Buttons"/>
+    <addaction name="actionSave_LP_configuration"/>
+    <addaction name="actionLoad_LP_configuration"/>
    </widget>
    <widget class="QMenu" name="menu_Debug">
     <property name="title">
@@ -455,7 +422,17 @@
   </action>
   <action name="actionEdit_Effect_Buttons">
    <property name="text">
-    <string>Reread Configuration</string>
+    <string>Read configuration from LP</string>
+   </property>
+  </action>
+  <action name="actionSave_LP_configuration">
+   <property name="text">
+    <string>Save configuration to file</string>
+   </property>
+  </action>
+  <action name="actionLoad_LP_configuration">
+   <property name="text">
+    <string>Load configuration from file</string>
    </property>
   </action>
  </widget>

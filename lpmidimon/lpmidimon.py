@@ -10,6 +10,7 @@ import mido.backends.rtmidi
 import sys
 import time
 import threading
+import queue
 import json
 import psutil
 import socket
@@ -55,14 +56,19 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.effect1boxes = []
         self.effect2boxes = []
         self.stepboxes = []
+        self.effects1 = []
+        self.effects2 = []
 
         self.currentStatus = LPStatus()
         self.endStatusTask = False
         self.lp2_cmd = 0
+        self.lp_sysex_q = queue.Queue()
         self.parsingEffectConfig = False
         self.requestEffectButtons = True
         self.sendEffectConfig = False
         self.statusTh = None
+
+        self.parsingMIDIButtonConfig = 0
         self.requestMIDIButton = 0
 
         self.midiclockcount = -1
@@ -70,9 +76,10 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
 
         self.restartStatusThread()
 
-        self.midibtntype.addItem("Note")
-        self.midibtntype.addItem("CC")
-        self.midibtntype.addItem("PgmChange")
+        self.midiButtonDict = {}
+        self.midibtntypelist = [ "PgmChange", "CC", "Note" ]
+        for i in self.midibtntypelist:
+            self.midibtntype.addItem(i)
         for i in range(0,128):
             self.midibtnnum.addItem(str(i))
         self.midibtntype.currentIndexChanged.connect(self.midibtntypeChanged)
@@ -114,7 +121,11 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             self.effect2boxes[i-1].currentIndexChanged.connect(self.effectChanged)
 
             self.stepboxes.append(QtWidgets.QComboBox(self.gridLayoutWidget_2))
-            self.gridLayout_3.addWidget(self.stepboxes[i-1], 1, i+1, 1, 1)
+            row = 1 + int((i-1) / 4)
+            col = 1 + ((i-1) & 3)
+            self.gridLayout_3.addWidget(self.stepboxes[i-1], row, col, 1, 1)
+            for k in self.lpFunctions.keysLP1():
+                self.stepboxes[i-1].addItem(self.lpFunctions.get(k))
             self.stepboxes[i-1].currentIndexChanged.connect(self.stepChanged)
 
         bpm = QtWidgets.QLabel(self.gridLayoutWidget)
@@ -128,6 +139,9 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.plainTextEdit.setReadOnly(True)
 
         self.actionEdit_Effect_Buttons.triggered.connect(self.handleEffectButtons)
+        self.actionSave_LP_configuration.triggered.connect(self.handleSaveLPConf)
+        self.actionLoad_LP_configuration.triggered.connect(self.handleLoadLPConf)
+
         self.action_Upgrade.triggered.connect(self.handleUpgrade)
         self.action_Status.triggered.connect(self.handleStatus)
         self.action_MIDI_Status.triggered.connect(self.handleMIDIStatus)
@@ -214,8 +228,8 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         th.start()
 
     def initMIDIDeviceMenus(self):
-        self.innames = mido.get_input_names()
-        self.outnames = mido.get_output_names()
+        self.innames = set(mido.get_input_names())
+        self.outnames = set(mido.get_output_names())
 
         self.action_in_devices = []
         self.action_out_devices = []
@@ -433,6 +447,10 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                     cmdRequest = mido.Message('sysex', data=[0,2,0x33,4,self.lp2_cmd])
                     outport.send(cmdRequest)
                     self.lp2_cmd = 0
+                elif not self.lp_sysex_q.empty():
+                    msg = self.lp_sysex_q.get()
+                    btnReq = mido.Message('sysex', data=msg)
+                    outport.send(btnReq)
                 elif self.requestEffectButtons:
                     self.requestEffectButtons = False
                     btnReq = mido.Message('sysex', data=[0,2,0x33,9])
@@ -503,7 +521,20 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def handleEffectButtons(self):
         self.requestEffectButtons = True
         self.requestMIDIButton = 0
-        pass
+
+    def handleSaveLPConf(self):
+        fileName, _ = QFileDialog.getSaveFileName(self, "Save to file", "",
+                                                  "Configuration files (*.cfg)")
+        if len(fileName) > 0:
+            if not fileName.endswith(".cfg"):
+                fileName = fileName + ".cfg"
+            self.saveLPConfig(fileName)
+
+    def handleLoadLPConf(self):
+        fileName, _ = QFileDialog.getOpenFileName(self, "Load from file", "",
+                                                  "Configuration files (*.cfg)")
+        if len(fileName) > 0:
+            self.loadLPConfig(fileName)
 
     def handleTimer(self):
         s = self.currentStatus.getSnapshot()
@@ -578,6 +609,25 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             self.statusTh.join()
         event.accept()
 
+    def saveLPConfig(self, fileName):
+        config = {'MIDIButtons' : self.midiButtonDict,
+                  'LP2Effects1' : self.effects1,
+                  'LP2Effects2' : self.effects2}
+
+        with open(fileName, 'w') as fp:
+            json.dump(config, fp)
+
+    def loadLPConfig(self, fileName):
+        try:
+            with open(fileName) as fp:
+                config = json.load(fp)
+                if config.get('MIDIButtons'):
+                    self.setDeviceMIDIButtons(config['MIDIButtons'])
+                if config.get('LP2Effects1') and config.get('LP2Effects2'):
+                    self.setEffects(config['LP2Effects1'], config['LP2Effects2'])
+        except FileNotFoundError:
+            pass
+
     def saveConfig(self):
         config = {'midiInDevice' : self.midiInDevice,
                   'midiOutDevice' : self.midiOutDevice}
@@ -599,14 +649,31 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             pass
 
     def parseButtonConfig(self, b):
-        print("parseButtonConfig: {}".format(b))
-        btnnum = 0
-        btnnum = btnnum + (b[0] << 7) + b[1]
-        btncnt = 0
+        self.parsingMIDIButtonConfig += 1
+        bti = self.midibtntype.currentIndex()
+        btn = self.midibtnnum.currentIndex()
+        currentbtn = bti * 128 + btn
+
+        btnnum = (b[0] << 7) + b[1]
         btncnt = b[2]
-        func = 0
-        func = func + (b[3] << 7) + b[4]
-        print("btn {} {}: {}".format(btnnum, btncnt, func))
+
+        bi = 3;
+        if btnnum != 0x3fff and btncnt == 8:
+            for i in range(0, btncnt):
+                flist = []
+                for fi in range(0, 8):
+                    func = (b[bi] << 7) + b[bi+1]
+                    if func == 0x3fff:
+                        func = -1
+                    flist.append(func)
+                    bi += 2
+                self.midiButtonDict[btnnum] = flist
+                if btnnum == currentbtn:
+                    for si in range(0, 8):
+                        idx = self.lpFunctions.keysLP1().index(flist[si])
+                        self.stepboxes[si].setCurrentIndex(idx)
+                btnnum += 1
+        self.parsingMIDIButtonConfig -= 1
 
     def parseEffectConfig(self, b):
         self.parsingEffectConfig = True
@@ -647,14 +714,106 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                 self.effects2[i] = ids[self.effect2boxes[i].currentIndex()]
             self.sendEffectConfig = True
 
+    def setEffects(self, neweffects1, neweffects2):
+        if len(neweffects1) != 8 or len(neweffects2) != 8:
+            return
+
+        self.effects1 = neweffects1
+        self.effects2 = neweffects2
+        self.parsingEffectConfig = True
+        for i in range(0, 8):
+            self.effect1boxes[i].clear()
+            index = 0
+            for id in self.lpFunctions.keys():
+                v = self.lpFunctions.get(id)
+                self.effect1boxes[i].addItem(v)
+                if id == self.effects1[i]:
+                    self.effect1boxes[i].setCurrentIndex(index)
+                index += 1
+
+            self.effect2boxes[i].clear()
+            index = 0
+            for id in self.lpFunctions.keys():
+                v = self.lpFunctions.get(id)
+                self.effect2boxes[i].addItem(v)
+                if id == self.effects2[i]:
+                    self.effect2boxes[i].setCurrentIndex(index)
+                index += 1
+        self.parsingEffectConfig = False
+        self.sendEffectConfig = True
+
     def stepChanged(self, idx):
-        pass
+        if self.parsingMIDIButtonConfig == 0:
+            bti = self.midibtntype.currentIndex()
+            btn = self.midibtnnum.currentIndex()
+            currentbtn = bti * 128 + btn
+            flist = self.midiButtonDict.get(currentbtn, [-1,-1,-1,-1,-1,-1,-1,-1])
+
+            altered = False
+            for i in range(0, 8):
+                vi = self.stepboxes[i].currentIndex()
+                v = self.lpFunctions.keysLP1()[vi]
+                if v != flist[i]:
+                    altered = True
+                    flist[i] = v
+
+            if altered:
+                self.midiButtonDict[currentbtn] = flist
+
+                msb = (currentbtn >> 7) & 0x7f
+                lsb = currentbtn & 0x7f
+                msg = [0,2,0x33,16,msb,lsb]
+                for f in flist:
+                    msg.append((f >> 7) & 0x7f)
+                    msg.append(f & 0x7f)
+                self.lp_sysex_q.put(msg)
+
+    def setDeviceMIDIButtons(self, newbtns):
+        for k in newbtns.keys():
+            btn = int(k)
+            flist = self.midiButtonDict.get(btn, [-1,-1,-1,-1,-1,-1,-1,-1])
+
+            listsEqual = True
+            for i in range(0, 8):
+                if newbtns[k][i] != flist[i]:
+                    listsEqual = False
+                    break
+
+            if not listsEqual:
+                flist = newbtns[k]
+                self.midiButtonDict[btn] = flist
+                msb = (btn >> 7) & 0x7f
+                lsb = btn & 0x7f
+                msg = [0,2,0x33,16,msb,lsb]
+                for f in flist:
+                    msg.append((f >> 7) & 0x7f)
+                    msg.append(f & 0x7f)
+                self.lp_sysex_q.put(msg)
+
+                i = self.midibtntype.currentIndex()
+                n = self.midibtnnum.currentIndex()
+                displaybtn = i * 128 + n
+                if displaybtn == btn:
+                    self.parsingMIDIButtonConfig += 1
+                    for si in range(0, 8):
+                        idx = self.lpFunctions.keysLP1().index(flist[si])
+                        self.stepboxes[si].setCurrentIndex(idx)
+                    self.parsingMIDIButtonConfig -= 1
 
     def midibtntypeChanged(self, idx):
-        pass
+        self.parsingMIDIButtonConfig += 1
+        bti = self.midibtntype.currentIndex()
+        btn = self.midibtnnum.currentIndex()
+        currentbtn = bti * 128 + btn
+
+        flist = self.midiButtonDict.get(currentbtn, [-1,-1,-1,-1,-1,-1,-1,-1])
+        for si in range(0, 8):
+            idx = self.lpFunctions.keysLP1().index(flist[si])
+            self.stepboxes[si].setCurrentIndex(idx)
+        self.parsingMIDIButtonConfig -= 1
 
     def midibtnnumChanged(self, idx):
-        pass
+        self.midibtntypeChanged(0)
 
 def main():
     app = QApplication(sys.argv)
