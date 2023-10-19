@@ -60,13 +60,18 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.effects2 = []
 
         self.currentStatus = LPStatus()
-        self.endStatusTask = False
         self.lp2_cmd = 0
         self.lp_sysex_q = queue.Queue()
         self.parsingEffectConfig = False
         self.requestEffectButtons = True
         self.sendEffectConfig = False
+
+        self.endStatusTask = False
         self.statusTh = None
+
+        self.endIPReceiver = False
+        self.ipReceiverTh = None
+        self.recvSock = None
 
         self.parsingMIDIButtonConfig = 0
         self.requestMIDIButton = 0
@@ -152,21 +157,28 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.timer.timeout.connect(self.handleTimer)
         self.timer.start(250)
 
-    def restartStatusThread(self):
-        if self.statusTh != None:
-            self.endStatusTask = True
-            self.statusTh.join()
-            self.endStatusTask = False
-
-        self.statusTh = threading.Thread(target=self.statusThread)
-        self.statusTh.start()
-
     def stopStatusThread(self):
         if self.statusTh != None:
             self.endStatusTask = True
             self.statusTh.join()
             self.endStatusTask = False
             self.statusTh = None
+
+    def restartStatusThread(self):
+        self.stopStatusThread()
+        self.statusTh = threading.Thread(target=self.statusThread)
+        self.statusTh.start()
+
+    def startIPReceiver(self):
+        self.ipReceiverTh = threading.Thread(target=self.ipReceiverThread)
+        self.ipReceiverTh.start()
+
+    def stopIPReceiver(self):
+        if self.ipReceiverTh != None:
+            self.endIPReceiver = True
+            self.ipReceiverTh.join()
+            self.endIPReceiver = False
+            self.ipReceiverTh = None
 
     def processINDevice(self, chk):
         if not chk:
@@ -339,47 +351,51 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                         print("Too many attempts")
                         return
 
+    def ipReceiverThread(self):
+        sock = self.recvSock
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        print(sock)
+
+        while not self.endIPReceiver:
+            try:
+                sock.settimeout(2)
+                (brcv, address) = sock.recvfrom(2048)
+                if brcv[0] == 0 and len(brcv) == 232:
+                    s = LPStatus()
+                    s.parseIPStatus(brcv)
+                    self.currentStatus.setStatus(s)
+                elif brcv[0] == 0xf0:
+                    print(brcv)
+                else:
+                    m = re.search('<log>(.*)</log>', brcv.decode("utf-8"), re.DOTALL)
+                    if m:
+                        self.currentStatus.appendLog(m.group(1))
+
+            except socket.timeout:
+                print("timeout");
+            except OSError as msg:
+                print(msg)
+
     def pollIPStatus(self, ipaddr):
         time.sleep(0.05)
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         lpip = (ipaddr, 5667)
 
         statusreq = bytes("<query>status compact</query>\0", "utf-8")
         logreq = bytes("<query>log</query>\0", "utf-8")
+        sock.sendto(statusreq, lpip)
+        print(sock)
+        self.recvSock = sock.dup()
+        self.startIPReceiver()
 
         while not self.endStatusTask:
             sock.sendto(statusreq, lpip)
-
-            try:
-                sock.settimeout(2)
-                (brcv, address) = sock.recvfrom(1024)
-                if len(brcv) == 232:
-                    s = LPStatus()
-                    s.parseIPStatus(brcv)
-                    self.currentStatus.setStatus(s)
-
-            except socket.timeout:
-                time.sleep(1)
-                continue
-
-            time.sleep(0.1)
-
+            time.sleep(0.2)
             sock.sendto(logreq, lpip)
-
-            try:
-                sock.settimeout(2)
-                (brcv, address) = sock.recvfrom(2048)
-                m = re.search('<log>(.*)</log>', brcv.decode("utf-8"), re.DOTALL)
-                if m:
-                    self.currentStatus.appendLog(m.group(1))
-
-            except socket.timeout:
-                time.sleep(1)
-                continue
-
-            time.sleep(0.1)
+            time.sleep(0.2)
 
             if self.lp2_cmd != 0:
                 cmdreq = bytes("<userinput>{}</userinput>\0".format(chr(self.lp2_cmd)), "utf-8")
@@ -398,6 +414,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                 self.doIPUpgrade(fileName, lpip)
 
         sock.close()
+        self.stopIPReceiver()
 
     def statusThread(self):
         ip = re.search('^(\d+\.\d+\.\d+\.\d+) ', self.midiOutDevice)
