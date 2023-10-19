@@ -273,18 +273,29 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                     if addr.broadcast:
                         self.searchForDevice(addr.broadcast)
 
-    def processMIDI(self, msg):
-        b = msg.bytes()
-        if msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 2]:
+    def processSysex(self, b):
+        if b[1:5] == [0, 2, 0x33, 2]:
             s = LPStatus()
             s.parseMIDIStatus(b)
             self.currentStatus.setStatus(s)
-        elif msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 3] and b[5] != 0xf7:
+        elif b[1:5] == [0, 2, 0x33, 3] and b[5] != 0xf7:
             self.currentStatus.appendLog(''.join(map(chr, b[5:-1])))
-        elif msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 9]:
+        elif b[1:5] == [0, 2, 0x33, 9]:
             self.parseEffectConfig(b[5:])
-        elif msg.type == 'sysex' and b[1:5] == [0, 2, 0x33, 15]:
+        elif b[1:5] == [0, 2, 0x33, 15]:
             self.parseButtonConfig(b[5:])
+        elif b[1:5] == [0, 2, 0x33, 24]:
+            # user pressed a button b[5]=button type, b[6]=button number
+            self.midibtntype.setCurrentIndex(int(b[5]))
+            self.midibtnnum.setCurrentIndex(int(b[6]))
+            pass
+        else:
+            pass
+
+    def processMIDI(self, msg):
+        b = msg.bytes()
+        if msg.type == 'sysex':
+            self.processSysex(b)
         elif msg.type == 'clock':
             self.midiclockcount += 1
 
@@ -358,21 +369,21 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
 
         while not self.endIPReceiver:
             try:
-                sock.settimeout(2)
+                sock.settimeout(1)
                 (brcv, address) = sock.recvfrom(2048)
                 if brcv[0] == 0 and len(brcv) == 232:
                     s = LPStatus()
                     s.parseIPStatus(brcv)
                     self.currentStatus.setStatus(s)
                 elif brcv[0] == 0xf0:
-                    print(brcv)
+                    self.processSysex(list(brcv))
                 else:
                     m = re.search('<log>(.*)</log>', brcv.decode("utf-8"), re.DOTALL)
                     if m:
                         self.currentStatus.appendLog(m.group(1))
 
             except socket.timeout:
-                print("timeout");
+                pass
             except OSError as msg:
                 print(msg)
 
@@ -393,15 +404,24 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
 
         while not self.endStatusTask:
             sock.sendto(statusreq, lpip)
-            time.sleep(0.2)
+            time.sleep(0.1)
             sock.sendto(logreq, lpip)
-            time.sleep(0.2)
+            time.sleep(0.1)
 
             if self.lp2_cmd != 0:
                 cmdreq = bytes("<userinput>{}</userinput>\0".format(chr(self.lp2_cmd)), "utf-8")
                 print(cmdreq)
                 sock.sendto(cmdreq, lpip)
                 self.lp2_cmd = 0
+            elif not self.lp_sysex_q.empty():
+                msg = bytes([0xf0] + self.lp_sysex_q.get() + [0xf7])
+                sock.sendto(msg, lpip)
+            elif self.requestMIDIButton < 384:
+                msb = (self.requestMIDIButton >> 7) & 0x7f
+                lsb = self.requestMIDIButton & 0x7f
+                msg = bytes([0xf0] + [0,2,0x33,14,msb,lsb,8] + [0xf7])
+                sock.sendto(msg, lpip)
+                self.requestMIDIButton += 8
 
             time.sleep(0.1)
 
