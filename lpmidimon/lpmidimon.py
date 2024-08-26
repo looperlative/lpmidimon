@@ -15,6 +15,8 @@ import json
 import psutil
 import socket
 import re
+import signal
+import requests
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QFileDialog
@@ -148,6 +150,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         self.actionLoad_LP_configuration.triggered.connect(self.handleLoadLPConf)
 
         self.action_Upgrade.triggered.connect(self.handleUpgrade)
+        self.actionLicense.triggered.connect(self.handleLicense)
         self.action_Status.triggered.connect(self.handleStatus)
         self.action_MIDI_Status.triggered.connect(self.handleMIDIStatus)
         self.actionRe_boot.triggered.connect(self.handleReboot)
@@ -225,6 +228,8 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             try:
                 sock.settimeout(2)
                 (brcv, address) = sock.recvfrom(1024)
+                if brcv[0] == 0xf0:
+                    continue
                 m = re.search('<id>(.*)</id>', brcv.decode("utf-8"))
                 mitem = "{} {}".format(address[0], m.group(1))
                 self.searchReturnLock.acquire()
@@ -288,6 +293,8 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
             # user pressed a button b[5]=button type, b[6]=button number
             self.midibtntype.setCurrentIndex(int(b[5]))
             self.midibtnnum.setCurrentIndex(int(b[6]))
+        elif b[1:5] == [0, 2, 0x33, 29]:
+            self.processLicenseID(b[5:-1])
             pass
         else:
             pass
@@ -365,7 +372,6 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def ipReceiverThread(self):
         sock = self.recvSock
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        print(sock)
 
         while not self.endIPReceiver:
             try:
@@ -398,7 +404,6 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         statusreq = bytes("<query>status compact</query>\0", "utf-8")
         logreq = bytes("<query>log</query>\0", "utf-8")
         sock.sendto(statusreq, lpip)
-        print(sock)
         self.recvSock = sock.dup()
         self.startIPReceiver()
 
@@ -536,10 +541,15 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def handleDirectory(self):
         self.lp2_cmd = ord('d')
 
+    def handleLicense(self):
+        print("handleLicense");
+        msg = [0,2,0x33,28]
+        self.lp_sysex_q.put(msg)
+
     def handleUpgrade(self):
         if re.search('^(\d+\.\d+\.\d+\.\d+) ', self.midiOutDevice):
             fileName, _ = QFileDialog.getOpenFileName(self, "Open upgrade file", "",
-                                                      "Firmware files (*.bin)")
+                                                      "Firmware files (*.bin);;RPi Upgrade files (*.signed)")
             if len(fileName) > 0:
                 self.upgradeFileLock.acquire()
                 self.upgradeFile = fileName
@@ -695,7 +705,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         btncnt = b[2]
 
         bi = 3;
-        if btnnum != 0x3fff and btncnt == 8:
+        if btnnum != 0x3fff and btncnt == 8 and len(b) == 131 :
             for i in range(0, btncnt):
                 flist = []
                 for fi in range(0, 8):
@@ -710,6 +720,8 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
                         idx = self.lpFunctions.keysLP1().index(flist[si])
                         self.stepboxes[si].setCurrentIndex(idx)
                 btnnum += 1
+            else:
+                print("btnnum {}, btncnt {}, len(b) {}".format(btnnum, btncnt, len(b)))
         self.parsingMIDIButtonConfig -= 1
 
     def parseEffectConfig(self, b):
@@ -852,10 +864,17 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def midibtnnumChanged(self, idx):
         self.midibtntypeChanged(0)
 
+    def processLicenseID(self, b):
+        s = ""
+        for n in b:
+            s += format(n, 'X')
+        print(s)
+
 def main():
     app = QApplication(sys.argv)
     form = LP2CtrlApp()
     form.show()
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     app.exec_()
 
 if __name__ == "__main__":
