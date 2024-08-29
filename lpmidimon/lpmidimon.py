@@ -19,7 +19,7 @@ import signal
 import requests
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QFileDialog
+from PyQt5.QtWidgets import QApplication, QFileDialog, QDialog
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtCore import Qt
@@ -29,6 +29,7 @@ from lpstatus import LPStatus
 from level_bar import LevelBar
 from pan_bar import PanBar
 from lpfunctions import LPFunctions
+from licensedialog import Ui_LicenseDialog
 
 class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def __init__(self, parent=None):
@@ -541,10 +542,39 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
     def handleDirectory(self):
         self.lp2_cmd = ord('d')
 
+    def handleLicenseOkButton(self):
+        email = self.license_ui.emailentry.text()
+        regid = self.license_ui.registrationentry.text()
+        if len(email) == 0 or len(regid) == 0 or len(self.license_hardware_id) == 0:
+            print("Invalid email or regid")
+        else:
+            postdata = {
+                'email': email,
+                'regid': regid,
+                'hwid': self.license_hardware_id,
+            }
+            posturl = 'https://upgrade.looperlative.com/cgi-bin/getlicense'
+            response = requests.post(posturl, postdata)
+            if 'Status' in response.text:
+                print(response.text)
+            else:
+                lstr = re.sub("[^A-Z0-9]","",response.text)
+                msg = [0,2,0x33,30]
+                for c in lstr:
+                    msg.append(ord(c))
+                self.lp_sysex_q.put(msg)
+                # print(lstr)
+
     def handleLicense(self):
-        print("handleLicense");
         msg = [0,2,0x33,28]
         self.lp_sysex_q.put(msg)
+
+        self.license_dlg = QDialog(self)
+        self.license_ui = Ui_LicenseDialog()
+        self.license_ui.setupUi(self.license_dlg)
+        self.license_ui.buttonBox.accepted.connect(self.handleLicenseOkButton)
+
+        self.license_dlg.show()
 
     def handleUpgrade(self):
         if re.search('^(\d+\.\d+\.\d+\.\d+) ', self.midiOutDevice):
@@ -868,7 +898,7 @@ class LP2CtrlApp(QtWidgets.QMainWindow, lp2ctrlui.Ui_MainWindow):
         s = ""
         for n in b:
             s += format(n, 'X')
-        print(s)
+        self.license_hardware_id = s
 
 def main():
     app = QApplication(sys.argv)
